@@ -1,0 +1,8 @@
+// Place your settings in this file to overwrite default and user settings.
+// By now we'll leave the default settings, excluding the js files for VS Code
+{
+    "files.exclude": {
+      "**/scripts/*.js.map": true,
+      "**/scripts/*.js": true
+    }
+}

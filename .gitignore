@@ -1,0 +1,6 @@
+# Ignoring the node_modules folder
+node_modules
+
+# Ignoring all the js and map.js files generated after compiling
+src/scripts/*.js
+src/scripts/*.js.map

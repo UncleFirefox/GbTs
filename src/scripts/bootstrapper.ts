@@ -9,5 +9,7 @@
 
 window.onload = () => {
     var bootstrapper = new Bootstrapper();
+    var mmu = new MMU();
+    mmu.ListenForFiles();
     bootstrapper.init();
 };

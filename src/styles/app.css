@@ -19,3 +19,17 @@ figure figcaption {
     border: 1px dotted blue;
     text-align: center;
 }
+
+#gbts { 
+    background:black; 
+    padding:1em 1em 1em; 
+    margin:0 auto;
+}
+
+figure figcaption > a {
+    color: #666;
+    font-family: 'gbretro', sans-serif;
+    font-size: 16pt;
+    cursor: pointer; 
+    cursor: hand;
+}

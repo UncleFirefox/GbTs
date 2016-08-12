@@ -11,7 +11,9 @@ class GPU {
     scx: any;
     scy: any;
     bgtile: any;
-    pal : any;
+    pal: any;
+    switchbg: any;
+    switchlcd: any;
 
     reset() {
         var htmlcanvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('screen');
@@ -133,55 +135,111 @@ class GPU {
         }
     }
 
-    renderscan()
-    {
-	// VRAM offset for the tile map
-	var mapoffs = this.bgmap ? 0x1C00 : 0x1800;
+    renderscan() {
+        // VRAM offset for the tile map
+        var mapoffs = this.bgmap ? 0x1C00 : 0x1800;
 
-	// Which line of tiles to use in the map
-	mapoffs += ((this.line + this.scy) & 255) >> 3;
-	
-	// Which tile to start with in the map line
-	var lineoffs = (this.scx >> 3);
+        // Which line of tiles to use in the map
+        mapoffs += ((this.line + this.scy) & 255) >> 3;
 
-	// Which line of pixels to use in the tiles
-	var y = (this.line + this.scy) & 7;
+        // Which tile to start with in the map line
+        var lineoffs = (this.scx >> 3);
 
-	// Where in the tileline to start
-	var x = this.scx & 7;
+        // Which line of pixels to use in the tiles
+        var y = (this.line + this.scy) & 7;
 
-    // Where to render on the canvas
-	var canvasoffs = this.line * 160 * 4;
+        // Where in the tileline to start
+        var x = this.scx & 7;
 
-	// Read tile index from the background map
-	var colour : any;
-	var tile = this.vram[mapoffs + lineoffs];
+        // Where to render on the canvas
+        var canvasoffs = this.line * 160 * 4;
 
-	// If the tile data set in use is #1, the
-	// indices are signed; calculate a real tile offset
-	if(this.bgtile == 1 && tile < 128) tile += 256;
+        // Read tile index from the background map
+        var colour: any;
+        var tile = this.vram[mapoffs + lineoffs];
 
-	for(var i = 0; i < 160; i++)
-	{
-	    // Re-map the tile pixel through the palette
-	    colour = this.pal[this.tileset[tile][y][x]];
+        // If the tile data set in use is #1, the
+        // indices are signed; calculate a real tile offset
+        if (this.bgtile == 1 && tile < 128) tile += 256;
 
-	    // Plot the pixel to canvas
-	    this.screen.data[canvasoffs+0] = colour[0];
-	    this.screen.data[canvasoffs+1] = colour[1];
-	    this.screen.data[canvasoffs+2] = colour[2];
-	    this.screen.data[canvasoffs+3] = colour[3];
-	    canvasoffs += 4;
+        for (var i = 0; i < 160; i++) {
+            // Re-map the tile pixel through the palette
+            colour = this.pal[this.tileset[tile][y][x]];
 
-	    // When this tile ends, read another
-	    x++;
-	    if(x == 8)
-	    {
-		x = 0;
-		lineoffs = (lineoffs + 1) & 31;
-		tile = this.vram[mapoffs + lineoffs];
-		if(this.bgtile == 1 && tile < 128) tile += 256;
-	    }
-	}
+            // Plot the pixel to canvas
+            this.screen.data[canvasoffs + 0] = colour[0];
+            this.screen.data[canvasoffs + 1] = colour[1];
+            this.screen.data[canvasoffs + 2] = colour[2];
+            this.screen.data[canvasoffs + 3] = colour[3];
+            canvasoffs += 4;
+
+            // When this tile ends, read another
+            x++;
+            if (x == 8) {
+                x = 0;
+                lineoffs = (lineoffs + 1) & 31;
+                tile = this.vram[mapoffs + lineoffs];
+                if (this.bgtile == 1 && tile < 128) tile += 256;
+            }
+        }
+    }
+
+    ReadByte(address: number) {
+        switch (address) {
+            // LCD Control
+            case 0xFF40:
+                return (this.switchbg ? 0x01 : 0x00) |
+                    (this.bgmap ? 0x08 : 0x00) |
+                    (this.bgtile ? 0x10 : 0x00) |
+                    (this.switchlcd ? 0x80 : 0x00);
+
+            // Scroll Y
+            case 0xFF42:
+                return this.scy;
+
+            // Scroll X
+            case 0xFF43:
+                return this.scx;
+
+            // Current scanline
+            case 0xFF44:
+                return this.line;
+        }
+    }
+
+
+
+    WriteByte(address: number, value: number) {
+        switch (address) {
+            // LCD Control
+            case 0xFF40:
+                this.switchbg = (value & 0x01) ? 1 : 0;
+                this.bgmap = (value & 0x08) ? 1 : 0;
+                this.bgtile = (value & 0x10) ? 1 : 0;
+                this.switchlcd = (value & 0x80) ? 1 : 0;
+                break;
+
+            // Scroll Y
+            case 0xFF42:
+                this.scy = value;
+                break;
+
+            // Scroll X
+            case 0xFF43:
+                this.scx = value;
+                break;
+
+            // Background palette
+            case 0xFF47:
+                for (var i = 0; i < 4; i++) {
+                    switch ((value >> (i * 2)) & 3) {
+                        case 0: this.pal[i] = [255, 255, 255, 255]; break;
+                        case 1: this.pal[i] = [192, 192, 192, 255]; break;
+                        case 2: this.pal[i] = [96, 96, 96, 255]; break;
+                        case 3: this.pal[i] = [0, 0, 0, 255]; break;
+                    }
+                }
+                break;
+        }
     }
 }

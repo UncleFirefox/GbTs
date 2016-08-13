@@ -4,7 +4,7 @@
     mmu: MMU;
     gpu: GPU;
 
-    interval: any = null
+    interval: any = null;
 
     constructor() {
         //let categoriesSelect = (<HTMLSelectElement>document.getElementById('RecipeCategory'));
@@ -53,7 +53,7 @@ window.onload = () => {
     var gbEngine = new GbEngine();
     gbEngine.mmu.ListenForFiles();
 
-    document.getElementById('reset').onclick = this.reset;
-    document.getElementById('run').onclick = this.run;
+    document.getElementById('reset').onclick = () => gbEngine.reset();
+    document.getElementById('run').onclick = () => gbEngine.run();
     gbEngine.reset();
 };

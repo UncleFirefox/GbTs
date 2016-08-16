@@ -10,8 +10,8 @@
 
     constructor() {
         this.cpu = new CPU();
-        this.mmu = new MMU();
         this.gpu = new GPU();
+        this.mmu = new MMU(this.cpu, this.gpu);
         this.timer = new Timer();
         this.opcodes = new Opcodes(this.cpu, this.mmu);
     }
@@ -27,7 +27,11 @@
     frame() {
         var fclk = this.cpu.clock.t + 70224;
         do {
-            this.opcodes[this.mmu.readByte(this.cpu.registers.pc++)]();
+            // Doing some tricks for debugging
+            var opcodeToFetch = this.mmu.readByte(this.cpu.registers.pc++);
+            
+            // For now we'll assume is opcodeMap
+            this.opcodes.opcodeMap[opcodeToFetch]();
             this.cpu.registers.pc &= 65535;
             this.cpu.clock.m += this.cpu.registers.m;
             this.cpu.clock.t += this.cpu.registers.t;
@@ -62,7 +66,7 @@
 
     run() {
         if (!this.interval) {
-            this.interval = setTimeout(this.frame, 1);
+            this.interval = setTimeout(() => {this.frame();}, 1);
             document.getElementById('run').innerHTML = 'Pause';
         }
         else {
@@ -75,7 +79,6 @@
 
 window.onload = () => {
     var gbEngine = new GbEngine();
-    gbEngine.mmu.listenForFiles();
 
     document.getElementById('reset').onclick = () => gbEngine.reset();
     document.getElementById('run').onclick = () => gbEngine.run();

@@ -17,6 +17,11 @@ class Timer {
     threshold: number;
     mmu: MMU;
 
+    constructor(){
+        this.clock = new TimerClock();
+        this.reg = new DivRegister();
+    }
+
     inc(cpumregister: number) {
         // Increment by the last opcode's time
         this.clock.sub += cpumregister;

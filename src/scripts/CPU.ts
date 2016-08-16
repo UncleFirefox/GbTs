@@ -17,8 +17,8 @@ class Registers {
 
 // CPU clock
 class Clock {
-    m: number;
-    t: number;
+    m: number = 0;
+    t: number = 0;
 }
 
 class CPU {

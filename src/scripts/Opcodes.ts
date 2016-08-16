@@ -1,4 +1,4 @@
-class OpcodesMap {
+class Opcodes {
 
     cpu: CPU;
     mmu: MMU;

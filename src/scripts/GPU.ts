@@ -18,6 +18,11 @@ class GPU {
     objdata: any[];
     switchobj: any;
 
+    constructor(){
+        this.oam = new Array<number>(160);
+        this.objdata = new Array(40);
+    }
+
     reset() {
         var htmlcanvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('screen');
         if (htmlcanvas && htmlcanvas.getContext) {

@@ -3,6 +3,7 @@
     cpu: CPU;
     mmu: MMU;
     gpu: GPU;
+    timer: Timer;
 
     interval: number = null;
 
@@ -11,6 +12,7 @@
         this.cpu = new CPU();
         this.mmu = new MMU();
         this.gpu = new GPU();
+        this.timer = new Timer();
 
         alert("Congrats! I'm up!");
     }
@@ -33,6 +35,9 @@
             this.cpu.registers.m = 0;
             this.cpu.registers.t = 0;
 
+            // Update the timer
+            this.timer.inc(this.cpu.registers.m);
+
             // If IME is on, and some interrupts are enabled in IE, and
             // an interrupt flag is set, handle the interrupt
             if (this.cpu.registers.ime && this.mmu.ie && this.mmu.if) {
@@ -49,6 +54,9 @@
 
             this.cpu.clock.m += this.cpu.registers.m;
             this.cpu.clock.t += this.cpu.registers.t;
+
+            // Update timer again, in case a RST occurred
+            this.timer.inc(this.cpu.registers.t);
 
         } while (this.cpu.clock.t < fclk);
     }

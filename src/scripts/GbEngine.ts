@@ -4,24 +4,23 @@
     mmu: MMU;
     gpu: GPU;
 
-    interval: any = null;
+    interval: number = null;
 
     constructor() {
         //let categoriesSelect = (<HTMLSelectElement>document.getElementById('RecipeCategory'));
         this.cpu = new CPU();
         this.mmu = new MMU();
         this.gpu = new GPU();
-        
+
         alert("Congrats! I'm up!");
     }
 
     reset() {
         this.gpu.reset();
-        // this.mmu.reset();
+        this.mmu.reset();
         this.cpu.reset();
 
-        // We'll do it our way, how do we open local files BTW?
-        //this.mmu.load('test.gb');
+        this.mmu.readLocalFile('roms/testGame.gb');
     }
 
     frame() {
@@ -31,7 +30,25 @@
             this.cpu.registers.pc &= 65535;
             this.cpu.clock.m += this.cpu.registers.m;
             this.cpu.clock.t += this.cpu.registers.t;
+            this.cpu.registers.m = 0;
+            this.cpu.registers.t = 0;
+
+            // If IME is on, and some interrupts are enabled in IE, and
+            // an interrupt flag is set, handle the interrupt
+            if (this.cpu.registers.ime && this.mmu.ie && this.mmu.if) {
+                // Mask off ints that aren't enabled
+                var ifired = this.mmu.ie & this.mmu.if;
+
+                if (ifired & 0x01) {
+                    this.mmu.if &= (255 - 0x01);
+                    this.cpu.RST40();
+                }
+            }
+
             this.gpu.step(this.cpu.registers.t);
+
+            this.cpu.clock.m += this.cpu.registers.m;
+            this.cpu.clock.t += this.cpu.registers.t;
 
         } while (this.cpu.clock.t < fclk);
     }
@@ -51,7 +68,7 @@
 
 window.onload = () => {
     var gbEngine = new GbEngine();
-    gbEngine.mmu.ListenForFiles();
+    gbEngine.mmu.listenForFiles();
 
     document.getElementById('reset').onclick = () => gbEngine.reset();
     document.getElementById('run').onclick = () => gbEngine.run();

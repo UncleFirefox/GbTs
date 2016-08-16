@@ -14,6 +14,9 @@ class GPU {
     pal: any;
     switchbg: any;
     switchlcd: any;
+    oam: number[];
+    objdata: any[];
+    switchobj: any;
 
     reset() {
         var htmlcanvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('screen');
@@ -50,6 +53,19 @@ class GPU {
                 this.tileset[i][j] = [0, 0, 0, 0, 0, 0, 0, 0];
             }
         }
+
+        // OAM stuff
+        for (var i = 0, n = 0; i < 40; i++ , n += 4) {
+            this.oam[n + 0] = 0;
+            this.oam[n + 1] = 0;
+            this.oam[n + 2] = 0;
+            this.oam[n + 3] = 0;
+            this.objdata[i] = {
+                'y': -16, 'x': -8,
+                'tile': 0, 'palette': 0,
+                'xflip': 0, 'yflip': 0, 'prio': 0, 'num': i
+            };
+        }
     }
 
     // Does a step in the GPU after the CPU cycle
@@ -75,7 +91,7 @@ class GPU {
                     this.mode = 0;
 
                     // Write a scanline to the framebuffer
-                    this.renderscan();
+                    this.renderScan();
                 }
                 break;
 
@@ -115,7 +131,7 @@ class GPU {
 
     // Takes a value written to VRAM, and updates the
     // internal tile data set
-    updatetile(addr: number, val: number) {
+    updateTile(addr: number, val: number) {
         // Get the "base address" for this tile row
         addr &= 0x1FFE;
 
@@ -135,60 +151,111 @@ class GPU {
         }
     }
 
-    renderscan() {
-        // VRAM offset for the tile map
-        var mapoffs = this.bgmap ? 0x1C00 : 0x1800;
+    renderScan() {
+        // Scanline data, for use by sprite renderer
+        var scanrow: any = [];
 
-        // Which line of tiles to use in the map
-        mapoffs += ((this.line + this.scy) & 255) >> 3;
+        // Render background if it's switched on
+        if (this.switchbg) {
+            var mapoffs = this.bgmap ? 0x1C00 : 0x1800;
+            mapoffs += ((this.line + this.scy) & 255) >> 3;
+            var lineoffs = (this.scx >> 3);
+            var y = (this.line + this.scy) & 7;
+            var x = this.scx & 7;
+            var canvasoffs = this.line * 160 * 4;
+            var colour: any;
+            var tile = this.vram[mapoffs + lineoffs];
 
-        // Which tile to start with in the map line
-        var lineoffs = (this.scx >> 3);
+            // If the tile data set in use is #1, the
+            // indices are signed; calculate a real tile offset
+            if (this.bgtile == 1 && tile < 128) tile += 256;
 
-        // Which line of pixels to use in the tiles
-        var y = (this.line + this.scy) & 7;
+            for (var i = 0; i < 160; i++) {
+                // Re-map the tile pixel through the palette
+                colour = this.pal.bg[this.tileset[tile][y][x]];
 
-        // Where in the tileline to start
-        var x = this.scx & 7;
+                // Plot the pixel to canvas
+                this.screen.data[canvasoffs + 0] = colour[0];
+                this.screen.data[canvasoffs + 1] = colour[1];
+                this.screen.data[canvasoffs + 2] = colour[2];
+                this.screen.data[canvasoffs + 3] = colour[3];
+                canvasoffs += 4;
 
-        // Where to render on the canvas
-        var canvasoffs = this.line * 160 * 4;
+                // Store the pixel for later checking
+                scanrow[i] = this.tileset[tile][y][x];
 
-        // Read tile index from the background map
-        var colour: any;
-        var tile = this.vram[mapoffs + lineoffs];
+                // When this tile ends, read another
+                x++;
+                if (x == 8) {
+                    x = 0;
+                    lineoffs = (lineoffs + 1) & 31;
+                    tile = this.vram[mapoffs + lineoffs];
+                    if (this.bgtile == 1 && tile < 128) tile += 256;
+                }
+            }
+        }
 
-        // If the tile data set in use is #1, the
-        // indices are signed; calculate a real tile offset
-        if (this.bgtile == 1 && tile < 128) tile += 256;
+        // Render sprites if they're switched on
+        if (this.switchobj) {
+            for (var i = 0; i < 40; i++) {
+                var obj = this.objdata[i];
 
-        for (var i = 0; i < 160; i++) {
-            // Re-map the tile pixel through the palette
-            colour = this.pal[this.tileset[tile][y][x]];
+                // Check if this sprite falls on this scanline
+                if (obj.y <= this.line && (obj.y + 8) > this.line) {
+                    // Palette to use for this sprite
+                    var pal = obj.pal ? this.pal.obj1 : this.pal.obj0;
 
-            // Plot the pixel to canvas
-            this.screen.data[canvasoffs + 0] = colour[0];
-            this.screen.data[canvasoffs + 1] = colour[1];
-            this.screen.data[canvasoffs + 2] = colour[2];
-            this.screen.data[canvasoffs + 3] = colour[3];
-            canvasoffs += 4;
+                    // Where to render on the canvas
+                    var canvasoffs = (this.line * 160 + obj.x) * 4;
 
-            // When this tile ends, read another
-            x++;
-            if (x == 8) {
-                x = 0;
-                lineoffs = (lineoffs + 1) & 31;
-                tile = this.vram[mapoffs + lineoffs];
-                if (this.bgtile == 1 && tile < 128) tile += 256;
+                    // Data for this line of the sprite
+                    var tilerow: any;
+
+                    // If the sprite is Y-flipped,
+                    // use the opposite side of the tile
+                    if (obj.yflip) {
+                        tilerow = this.tileset[obj.tile]
+                        [7 - (this.line - obj.y)];
+                    }
+                    else {
+                        tilerow = this.tileset[obj.tile]
+                        [this.line - obj.y];
+                    }
+
+                    var colour;
+                    var x: number;
+
+                    for (var x = 0; x < 8; x++) {
+                        // If this pixel is still on-screen, AND
+                        // if it's not colour 0 (transparent), AND
+                        // if this sprite has priority OR shows under the bg
+                        // then render the pixel
+                        if ((obj.x + x) >= 0 && (obj.x + x) < 160 &&
+                            tilerow[x] &&
+                            (obj.prio || !scanrow[obj.x + x])) {
+                            // If the sprite is X-flipped,
+                            // write pixels in reverse order
+                            colour = pal[tilerow[obj.xflip ? (7 - x) : x]];
+
+                            this.screen.data[canvasoffs + 0] = colour[0];
+                            this.screen.data[canvasoffs + 1] = colour[1];
+                            this.screen.data[canvasoffs + 2] = colour[2];
+                            this.screen.data[canvasoffs + 3] = colour[3];
+
+                            canvasoffs += 4;
+                        }
+                    }
+                }
             }
         }
     }
 
-    ReadByte(address: number) {
+    readByte(address: number) {
         switch (address) {
             // LCD Control
             case 0xFF40:
                 return (this.switchbg ? 0x01 : 0x00) |
+                    (this.switchobj ? 0x02 : 0x00) |
                     (this.bgmap ? 0x08 : 0x00) |
                     (this.bgtile ? 0x10 : 0x00) |
                     (this.switchlcd ? 0x80 : 0x00);
@@ -207,13 +274,12 @@ class GPU {
         }
     }
 
-
-
-    WriteByte(address: number, value: number) {
+    writeByte(address: number, value: number) {
         switch (address) {
             // LCD Control
             case 0xFF40:
                 this.switchbg = (value & 0x01) ? 1 : 0;
+                this.switchobj = (value & 0x02) ? 1 : 0;
                 this.bgmap = (value & 0x08) ? 1 : 0;
                 this.bgtile = (value & 0x10) ? 1 : 0;
                 this.switchlcd = (value & 0x80) ? 1 : 0;
@@ -233,13 +299,60 @@ class GPU {
             case 0xFF47:
                 for (var i = 0; i < 4; i++) {
                     switch ((value >> (i * 2)) & 3) {
-                        case 0: this.pal[i] = [255, 255, 255, 255]; break;
-                        case 1: this.pal[i] = [192, 192, 192, 255]; break;
-                        case 2: this.pal[i] = [96, 96, 96, 255]; break;
-                        case 3: this.pal[i] = [0, 0, 0, 255]; break;
+                        case 0: this.pal.bg[i] = [255, 255, 255, 255]; break;
+                        case 1: this.pal.bg[i] = [192, 192, 192, 255]; break;
+                        case 2: this.pal.bg[i] = [96, 96, 96, 255]; break;
+                        case 3: this.pal.bg[i] = [0, 0, 0, 255]; break;
                     }
                 }
                 break;
+
+            // Object palettes
+            case 0xFF48:
+                for (var i = 0; i < 4; i++) {
+                    switch ((value >> (i * 2)) & 3) {
+                        case 0: this.pal.obj0[i] = [255, 255, 255, 255]; break;
+                        case 1: this.pal.obj0[i] = [192, 192, 192, 255]; break;
+                        case 2: this.pal.obj0[i] = [96, 96, 96, 255]; break;
+                        case 3: this.pal.obj0[i] = [0, 0, 0, 255]; break;
+                    }
+                }
+                break;
+
+            case 0xFF49:
+                for (var i = 0; i < 4; i++) {
+                    switch ((value >> (i * 2)) & 3) {
+                        case 0: this.pal.obj1[i] = [255, 255, 255, 255]; break;
+                        case 1: this.pal.obj1[i] = [192, 192, 192, 255]; break;
+                        case 2: this.pal.obj1[i] = [96, 96, 96, 255]; break;
+                        case 3: this.pal.obj1[i] = [0, 0, 0, 255]; break;
+                    }
+                }
+                break;
+        }
+    }
+
+    buildobjdata(address: number, value: number) {
+        var obj = address >> 2;
+        if (obj < 40) {
+            switch (address & 3) {
+                // Y-coordinate
+                case 0: this.objdata[obj].y = value - 16; break;
+
+                // X-coordinate
+                case 1: this.objdata[obj].x = value - 8; break;
+
+                // Data tile
+                case 2: this.objdata[obj].tile = value; break;
+
+                // Options
+                case 3:
+                    this.objdata[obj].palette = (value & 0x10) ? 1 : 0;
+                    this.objdata[obj].xflip = (value & 0x20) ? 1 : 0;
+                    this.objdata[obj].yflip = (value & 0x40) ? 1 : 0;
+                    this.objdata[obj].prio = (value & 0x80) ? 1 : 0;
+                    break;
+            }
         }
     }
 }

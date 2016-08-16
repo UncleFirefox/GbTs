@@ -4,17 +4,16 @@
     mmu: MMU;
     gpu: GPU;
     timer: Timer;
+    opcodes : Opcodes;
 
-    interval: number = null;
+    interval: number = 0;
 
     constructor() {
-        //let categoriesSelect = (<HTMLSelectElement>document.getElementById('RecipeCategory'));
         this.cpu = new CPU();
         this.mmu = new MMU();
         this.gpu = new GPU();
         this.timer = new Timer();
-
-        alert("Congrats! I'm up!");
+        this.opcodes = new Opcodes(this.cpu, this.mmu);
     }
 
     reset() {
@@ -28,7 +27,7 @@
     frame() {
         var fclk = this.cpu.clock.t + 70224;
         do {
-            //this.cpu.map[this.mmu.ReadByte(this.cpu.registers.pc++)]();
+            this.opcodes[this.mmu.readByte(this.cpu.registers.pc++)]();
             this.cpu.registers.pc &= 65535;
             this.cpu.clock.m += this.cpu.registers.m;
             this.cpu.clock.t += this.cpu.registers.t;
@@ -62,13 +61,13 @@
     }
 
     run() {
-        if (this.interval) {
+        if (!this.interval) {
             this.interval = setTimeout(this.frame, 1);
             document.getElementById('run').innerHTML = 'Pause';
         }
         else {
             clearInterval(this.interval);
-            this.interval = null;
+            this.interval = 0;
             document.getElementById('run').innerHTML = 'Run';
         }
     }

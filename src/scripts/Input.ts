@@ -13,7 +13,7 @@ class Input {
         this.column = 0;
     }
 
-    readByte(addr: number) {
+    readByte() {
         switch (this.column) {
             case 0x10: return this.rows[0];
             case 0x20: return this.rows[1];
@@ -21,7 +21,7 @@ class Input {
         }
     }
 
-    writeByte(addr: number, val: number) {
+    writeByte(val: number) {
         this.column = val & 0x30;
     }
 

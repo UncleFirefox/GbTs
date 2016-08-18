@@ -11,23 +11,29 @@ class GPU {
     mode: number = 0;
     modeclock: number = 0;
     line: number = 0;
-    tileset: any;
-    vram: any;
+    tileset: number[][][];
+    vram: number[] = new Array(8192);
     bgmap: any;
     scx: any;
     scy: any;
     bgtile: any;
-    pal: Palette;
+    pal: Palette = new Palette();
     switchbg: any;
     switchlcd: any;
-    oam: number[];
-    objdata: any[];
+    oam: number[] = new Array(160);
+    objdata: any[] = new Array(40);
     switchobj: any;
 
     constructor(){
-        this.oam = new Array<number>(160);
-        this.objdata = new Array(40);
-        this.pal = new Palette();
+        // Tile stuff, we had to put any to avoid problems for now
+        this.tileset = [];
+
+        for (var i = 0; i < 384; i++) {
+            this.tileset[i] = [];
+            for (var j = 0; j < 8; j++) {
+                this.tileset[i][j] = [0, 0, 0, 0, 0, 0, 0, 0];
+            }
+        }
     }
 
     reset() {
@@ -344,7 +350,7 @@ class GPU {
         }
     }
 
-    buildobjdata(address: number, value: number) {
+    updateoam(address: number, value: number) {
         var obj = address >> 2;
         if (obj < 40) {
             switch (address & 3) {

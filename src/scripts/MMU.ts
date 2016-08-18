@@ -26,8 +26,8 @@ class MMU {
 
     rom: string;
     wram: number[] = new Array(8192);
-    eram: number[] = new Array(131072);
-    zram: number[] = new Array(256);
+    eram: number[] = new Array(32768);
+    zram: number[] = new Array(128);
     ie: number = 0;
     if: number = 0;
 
@@ -35,6 +35,7 @@ class MMU {
     cpu: CPU;
     gpu: GPU;
     input: Input;
+    timer: Timer;
 
     // MBC states
     mbc: any[] = new Array(2);
@@ -43,20 +44,35 @@ class MMU {
     romoffs: number = 0x4000;
 
     // Offset for RAM bank
-    ramoffs: number = 0x0000;
+    ramoffs: number = 0;
 
     // Copy of the ROM's cartridge-type value
     carttype: number = 0;
 
-    constructor(cpu : CPU, gpu : GPU) {
+    constructor(cpu: CPU, gpu: GPU) {
         this.cpu = cpu;
         this.gpu = gpu;
+
+        // WIP, might remove it from here
+        this.input = new Input();
+        this.timer = new Timer();
 
         this.listenForFiles();
     }
 
     // Resetting the MMU, don't know what I'm doing here
     reset() {
+
+        let i: number = 0;
+
+        for (i = 0; i < 8192; i++) this.wram[i] = 0;
+        for (i = 0; i < 32768; i++) this.eram[i] = 0;
+        for (i = 0; i < 127; i++) this.zram[i] = 0;
+
+        this.inBios = 1;
+        this.ie = 0;
+        this.if = 0;
+
         // initialise MBC internal data
         this.mbc[0] = {};
         this.mbc[1] = {
@@ -145,8 +161,6 @@ class MMU {
             // Working RAM
             case 0xC000:
             case 0xD000:
-                return this.wram[address & 0x1FFF];
-
             // Working RAM shadow
             case 0xE000:
                 return this.wram[address & 0x1FFF];
@@ -169,7 +183,7 @@ class MMU {
                         else
                             return 0;
 
-                    // Zero-page
+                    // Zero-page RAM, I/O, interrupts
                     case 0xF00:
                         if (address == 0xFFFF) {
                             return this.ie;
@@ -180,9 +194,18 @@ class MMU {
                         else {
                             switch (address & 0x00F0) {
                                 case 0x00:
-                                    if (address == 0xFF0F) return this.if;
-                                    break;
-                                //...
+                                    switch (address & 0xF) {
+                                        case 0: return this.input.readByte();    // JOYP
+                                        case 4: case 5: case 6: case 7:
+                                            return this.timer.rb(address);
+                                        case 15: return this.if;    // Interrupt flags
+                                        default: return 0;
+                                    }
+                                case 0x10: case 0x20: case 0x30:
+                                    return 0;
+
+                                case 0x40: case 0x50: case 0x60: case 0x70:
+                                    return this.gpu.readByte(address);
                             }
                             return 0;
                         }
@@ -197,9 +220,9 @@ class MMU {
 
     // Write 8-bit byte from a given address
     writeByte(address: number, value: number) {
-
         switch (address & 0xF000) {
-            // MBC1: External RAM switch
+            // ROM bank 0
+            // MBC1: Turn external RAM on
             case 0x0000:
             case 0x1000:
                 switch (this.carttype) {
@@ -216,13 +239,10 @@ class MMU {
             case 0x3000:
                 switch (this.carttype) {
                     case 1:
-                    case 2:
-                    case 3:
-                        // Set lower 5 bits of ROM bank (skipping #0)
+                        this.mbc[1].rombank &= 0x60;
                         value &= 0x1F;
                         if (!value) value = 1;
-                        this.mbc[1].rombank =
-                            (this.mbc[1].rombank & 0x60) + value;
+                        this.mbc[1].rombank |= value;
 
                         // Calculate ROM offset from bank
                         this.romoffs = this.mbc[1].rombank * 0x4000;
@@ -234,8 +254,6 @@ class MMU {
             case 0x4000:
             case 0x5000:
                 switch (this.carttype) {
-                    case 1:
-                    case 2:
                     case 3:
                         if (this.mbc[1].mode) {
                             // RAM mode: Set bank
@@ -258,11 +276,17 @@ class MMU {
             case 0x6000:
             case 0x7000:
                 switch (this.carttype) {
-                    case 2:
-                    case 3:
+                    case 1:
                         this.mbc[1].mode = value & 1;
                         break;
                 }
+                break;
+
+
+            // VRAM
+            case 0x8000: case 0x9000:
+                this.gpu.vram[address & 0x1FFF] = value;
+                //this.gpu.updateTile(address & 0x1FFF, value);
                 break;
 
             // External RAM
@@ -271,27 +295,50 @@ class MMU {
                 this.eram[this.ramoffs + (address & 0x1FFF)] = value;
                 break;
 
+            // Work RAM and echo
+            case 0xC000: case 0xD000: case 0xE000:
+                this.wram[address & 0x1FFF] = value;
+                break;
+
             case 0xF000:
                 switch (address & 0x0F00) {
-                    //...
+                    // Echo RAM
+                    case 0x000: case 0x100: case 0x200: case 0x300:
+                    case 0x400: case 0x500: case 0x600: case 0x700:
+                    case 0x800: case 0x900: case 0xA00: case 0xB00:
+                    case 0xC00: case 0xD00:
+                        this.wram[address & 0x1FFF] = value;
+                        break;
+                    case 0xE00:
+                        if (address < 0xFEA0) this.gpu.oam[address & 0xFF] = value;
+                        this.gpu.updateoam(address - 0xFE00, value);
+                        break;
                     // Zero-page
                     case 0xF00:
-                        if (address >= 0xFF80) {
+                        if (address == 0xFFFF) { this.ie = value; }
+                        else if (address >= 0xFF80) {
                             this.zram[address & 0x7F] = value;
                         }
                         else {
                             // I/O
                             switch (address & 0x00F0) {
+                                case 0x00:
+                                    switch (address & 0xF) {
+                                        case 0: this.input.writeByte(value); break;
+                                        case 4: case 5: case 6: case 7: this.timer.wb(address, value); break;
+                                        case 15: this.if = value; break;
+                                    }
+                                    break;
+
+                                case 0x10: case 0x20: case 0x30:
+                                    break;
+
                                 // GPU
                                 case 0x40: case 0x50: case 0x60: case 0x70:
                                     this.gpu.writeByte(address, value);
                                     break;
                             }
                         }
-                        break;
-                    case 0xE00:
-                        if (address < 0xFEA0) this.gpu.oam[address & 0xFF] = value;
-                        this.gpu.buildobjdata(address - 0xFE00, value);
                         break;
                 }
                 break;
@@ -300,5 +347,6 @@ class MMU {
 
     // Write 16-bit word from a given address
     writeWord(address: number, value: number) {
+        this.writeByte(address, value & 255); this.writeByte(address + 1, value >> 8);
     }
 }

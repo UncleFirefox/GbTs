@@ -8,6 +8,8 @@
 
     interval: number = 0;
 
+    audio : HTMLAudioElement = new Audio('sounds/gameboy_start_up.mp3');
+
     constructor() {
         this.cpu = new CPU();
         this.gpu = new GPU();
@@ -28,10 +30,13 @@
         var fclk = this.cpu.clock.t + 70224;
         do {
             // Doing some tricks for debugging
+            console.log('Program counter: ' + this.cpu.registers.pc);
             var opcodeToFetch = this.mmu.readByte(this.cpu.registers.pc++);
             
             // For now we'll assume is opcodeMap
+            //console.log('Opcode fetched: ' + opcodeToFetch);
             this.opcodes.opcodeMap[opcodeToFetch]();
+
             this.cpu.registers.pc &= 65535;
             this.cpu.clock.m += this.cpu.registers.m;
             this.cpu.clock.t += this.cpu.registers.t;
@@ -65,6 +70,13 @@
     }
 
     run() {
+
+        if (this.mmu.rom === undefined)
+        {
+            this.audio.play();
+            return;
+        }
+
         if (!this.interval) {
             this.interval = setTimeout(() => {this.frame();}, 1);
             document.getElementById('run').innerHTML = 'Pause';

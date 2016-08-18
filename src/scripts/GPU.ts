@@ -1,3 +1,9 @@
+class Palette {
+    bg : number[][] =  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    obj0 : number[][] =  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    obj1 : number[][] =  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+}
+
 class GPU {
 
     canvas: CanvasRenderingContext2D;
@@ -11,7 +17,7 @@ class GPU {
     scx: any;
     scy: any;
     bgtile: any;
-    pal: any;
+    pal: Palette;
     switchbg: any;
     switchlcd: any;
     oam: number[];
@@ -21,6 +27,7 @@ class GPU {
     constructor(){
         this.oam = new Array<number>(160);
         this.objdata = new Array(40);
+        this.pal = new Palette();
     }
 
     reset() {

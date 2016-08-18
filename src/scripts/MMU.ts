@@ -25,9 +25,9 @@ class MMU {
     ];
 
     rom: string;
-    wram: any[];
-    eram: any[];
-    zram: any[];
+    wram: number[] = new Array(8192);
+    eram: number[] = new Array(131072);
+    zram: number[] = new Array(256);
     ie: number = 0;
     if: number = 0;
 
@@ -37,7 +37,7 @@ class MMU {
     input: Input;
 
     // MBC states
-    mbc: any[];
+    mbc: any[] = new Array(2);
 
     // Offset for second ROM bank
     romoffs: number = 0x4000;
@@ -51,7 +51,7 @@ class MMU {
     constructor(cpu : CPU, gpu : GPU) {
         this.cpu = cpu;
         this.gpu = gpu;
-        this.mbc = new Array(2);
+
         this.listenForFiles();
     }
 

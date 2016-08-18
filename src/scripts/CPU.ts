@@ -1,18 +1,18 @@
 // CPU registers
 class Registers {
-    a: number;
-    b: number;
-    c: number;
-    d: number;
-    e: number;
-    h: number;
-    l: number;
-    f: number;
-    pc: number;
-    sp: number;
-    m: number;
-    t: number;
-    ime: number;
+    a: number = 0;
+    b: number = 0;
+    c: number = 0;
+    d: number = 0;
+    e: number = 0;
+    h: number = 0;
+    l: number = 0;
+    f: number = 0;
+    pc: number = 0;
+    sp: number = 0;
+    m: number = 0;
+    t: number = 0;
+    ime: number= 1;
 }
 
 // CPU clock

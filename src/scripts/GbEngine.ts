@@ -30,7 +30,7 @@
         var fclk = this.cpu.clock.t + 70224;
         do {
             // Doing some tricks for debugging
-            console.log('Program counter: ' + this.cpu.registers.pc);
+            //console.log('Program counter: ' + this.cpu.registers.pc);
             var opcodeToFetch = this.mmu.readByte(this.cpu.registers.pc++);
             
             // For now we'll assume is opcodeMap

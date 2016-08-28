@@ -37,6 +37,11 @@ class GPU {
     }
 
     reset() {
+
+        // VRAM, OAM and palette
+        
+
+        // Resetting the canvas
         var htmlcanvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('screen');
         if (htmlcanvas && htmlcanvas.getContext) {
             this.canvas = htmlcanvas.getContext('2d');

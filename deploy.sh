@@ -2,6 +2,7 @@
 
 set -o errexit -o nounset
 
+# We could also check stuff like $TRAVIS_PULL_REQUEST == "false"
 if [ "$TRAVIS_BRANCH" != "master" ]
 then
   echo "This commit was made against the $TRAVIS_BRANCH and not the master! No deploy!"
@@ -10,18 +11,17 @@ fi
 
 rev=$(git rev-parse --short HEAD)
 
-cd src
+rm -rf deploy || exit 0;
+mkdir deploy;
+
+cd deploy
 
 git init
 git config user.name "Albert Rodriguez"
 git config user.email "albertrfranco@gmail.com"
 
-git remote add upstream "https://$GH_TOKEN@github.com/UncleFirefox/GbTs.git"
-git fetch upstream
-git reset upstream/gh-pages
+cp ../src .
 
-touch .
-
-git add -A .
+git add .
 git commit -m "Rebuilding the emulator, revision: ${rev}"
-git push -q upstream HEAD:gh-pages
+git push --force --quiet "https://${GH_TOKEN}@github.com/UncleFirefox/GbTs.git" master:gh-pages

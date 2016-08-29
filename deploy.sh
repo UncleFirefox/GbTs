@@ -20,7 +20,7 @@ git init
 git config user.name "Albert Rodriguez"
 git config user.email "albertrfranco@gmail.com"
 
-cp ../src .
+cp -a ../src /
 
 git add .
 git commit -m "Rebuilding the emulator, revision: ${rev}"

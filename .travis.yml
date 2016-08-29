@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "6.4.0"
+install:
+  - npm install
+script:
+  - npm run tsc
+after_success:
+  - bash deploy.sh
+env:
+  global:
+    - secure: "nhiav99Sr0Af5E8qCo7AYsAfnf1cEeAkxZ+u1yjYSpToosNlqRitvl+xG7vGFhoKSKhCMwtZmauVv4ojncKUXCb2uthlf4ao8r+LIHg+uXXMH3b83XHOKtLJ3m6yo3VLGCHLFuBOE6oj42RFa8VmUNsafESpQOk2IwJkpN2jd4Blk61byPFcoKCxqfK15hgM5DFbIfBJ+SZS9xXdpA6Uty7yuaxHzhHiQj9tXMNHJfjmjr/48AsT/azQuSnByR19D3ItCjdTmDgyxRIdKRskdP7DhWj0EZvIjUD/XrmXBzv1C7TMAIkS7I9X6HHwQzb7oWFUtjVUc3D1qcVuishq28xQc1qpvytIEd+q9fJHFQJPbTdIO/jZvILjflVdyOZgwq514nPQ3erAIvC+ZXhKd526X9glRt3uSA5VH4rF2hR5WoIHn4JMNAyFWc8wzc7qwS4hgXbOQRpxUb0xb1cmGLYmZ2yOtBzhbwxOGKPX9/BnOKQjs/yIeg4PrYoD+1MTuX3xLCcnNJYtrps2tc9hrago+db80YiWBkFJL1nRfRczFaggzLQhTE3q4Q6ZzmwaRHVvc+rpAuRxKP1VEPc2S5sEnXEXzlLmM4Ihzfg7/1qeZpnHT/zMVrlQNrTXXN/9mAD5RixTfcuBXMH53u5LWxhoySmcwYlC0tKZ9/lb16M="

@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/UncleFirefox/GbTs.svg?branch=master)](https://travis-ci.org/UncleFirefox/GbTs)
+[Deployed on gihub.io!](https://unclefirefox.github.io/GbTs/)
+
 # GbTS: Yet another Gameboy emulator written in Typescript
 
 The idea behind this project is to create a Gameboy emulator using modern development techniques including:

@@ -109,7 +109,7 @@ class MMU {
 
         //  Simulating a request against our local system
         fileRequest.open("GET", filePath, false);
-        fileRequest.onreadystatechange = function () {
+        fileRequest.onreadystatechange = () => {
             if (fileRequest.readyState === 4) {
                 if (fileRequest.status === 200 || fileRequest.status == 0) {
                     this.rom = fileRequest.response;

@@ -23,6 +23,7 @@
         this.mmu.reset();
         this.cpu.reset();
 
+        this.cpu.registers.pc = 0x100;
         this.mmu.readLocalFile('roms/testGame.gb');
     }
 
@@ -78,7 +79,7 @@
         }
 
         if (!this.interval) {
-            this.interval = setTimeout(() => {this.frame();}, 1);
+            this.interval = setInterval(() => this.frame(), 1);
             document.getElementById('run').innerHTML = 'Pause';
         }
         else {

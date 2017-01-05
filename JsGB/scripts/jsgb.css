@@ -1,0 +1,4 @@
+#jsgb { background:black; width:180px; padding:0 0 1em; margin:0 auto; }
+#jsgb_msg { display:none; }
+#jsgb_screen { margin:10px; }
+#jsgb_reset, #jsgb_run { cursor:pointer; color:white; }

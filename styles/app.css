@@ -1,0 +1,80 @@
+@font-face{
+    font-family: 'gbretro';
+    src: url('../fonts/gbboot.ttf');
+}
+
+figure {
+    display: inline-block;
+    border: 1px dotted gray;
+    margin: 20px; /* adjust as needed */
+}
+
+figure img {
+    vertical-align: top;
+}
+
+figure figcaption {
+    font-family: 'gbretro', sans-serif;
+    font-size: 20pt;
+    border: 1px dotted blue;
+    text-align: center;
+}
+
+#gbts { 
+    background:black; 
+    padding:1em 1em 1em; 
+    margin:0 auto;
+}
+
+figure figcaption > a {
+    color: #666;
+    font-family: 'gbretro', sans-serif;
+    font-size: 16pt;
+    cursor: pointer; 
+    cursor: hand;
+}
+
+.corner-ribbon{
+  width: 200px;
+  background: #e43;
+  font-family: 'gbretro', sans-serif;
+  font-size: 14px;
+  position: absolute;
+  top: 25px;
+  left: -50px;
+  text-align: center;
+  line-height: 50px;
+  letter-spacing: 1px;
+  color: #f0f0f0;
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.corner-ribbon.sticky{
+  position: fixed;
+}
+
+.corner-ribbon.top-right{
+  top: 25px;
+  right: -50px;
+  left: auto;
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}
+
+.corner-ribbon.blue{background: #39d;}
+
+.corner-ribbon > a {
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+#rom-selector-label {
+    cursor: pointer;
+}
+
+#title {
+    font-family:gbretro;
+    font-size:30pt;
+    font-style:bold;
+}

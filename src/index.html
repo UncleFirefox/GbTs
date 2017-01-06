@@ -10,24 +10,25 @@
 
 <body>
     <div class="corner-ribbon top-right sticky blue"><a target="_blank" href="https://github.com/UncleFirefox/GbTs">Fork me on Github</a></div>
-    <div>
-        <h1>GbTS: A Gameboy Emulator Using Typescript</h1>
-    </div>
-    <div>
-        <laber for="rom-selector">Please, select a rom...</label>
-            <input type="file" id="rom-selector" alt="Select a Gameboy rom">
-    </div>
-    <figure>
-        <div id="gbts">
-            <canvas id="screen" width="160" height="144"></canvas>
-        </div>
-        <figcaption><a id="reset">Reset</a> | <a id="run">Run</a></figcaption>
-    </figure>
-    <div id="image">
+    <div style="text-align: center">
+        <p id="title">GbTS: A Gameboy Emulator Using Typescript</p>
         <figure>
-            <img src="images/gbstart.gif" />
-            <figcaption>I know it's not the same as an emulator, but it's a start right?? ;)</figcaption>
+            <div id="gbts">
+                <canvas id="screen" width="160" height="144"></canvas>
+            </div>
+            <figcaption><a id="reset">Reset</a> | <a id="run">Run</a></figcaption>
         </figure>
+        <div>
+            <label id="rom-selector-label" for="rom-selector">Click to select a rom...</label>
+            <input id="rom-selector" type="file" style="display:none;">
+        </div>
+        <p style="font-family:gbretro; font-size:15pt">First goal: The bootup screen!</p>
+        <div id="image">
+            <figure>
+                <img src="images/gbstart.gif" />
+                <figcaption>I know it's not the same as an emulator, but it's a start right?? ;)</figcaption>
+            </figure>
+        </div>
     </div>
     <script src="scripts/Input.js"></script>
     <script src="scripts/GPU.js"></script>

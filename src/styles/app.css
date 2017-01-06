@@ -68,3 +68,13 @@ figure figcaption > a {
     color: #FFFFFF;
     text-decoration: none;
 }
+
+#rom-selector-label {
+    cursor: pointer;
+}
+
+#title {
+    font-family:gbretro;
+    font-size:30pt;
+    font-style:bold;
+}

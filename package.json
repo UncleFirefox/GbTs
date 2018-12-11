@@ -9,12 +9,12 @@
     "start": "concurrently \"npm run tsc:w\" \"superstatic\" "
   },
   "dependencies": {
-    "superstatic": "^4.0.3"
+    "superstatic": "^6.0.4"
   },
   "devDependencies": {
-    "tslint": "^4.2.0",
-    "typescript": "^2.1.4",
+    "tslint": "^5.11.0",
+    "typescript": "^3.2.2",
     "typings": "^2.1.0",
-    "concurrently": "^3.1.0"
+    "concurrently": "^4.1.0"
   }
 }
